@@ -1,0 +1,78 @@
+version: '3'
+
+env:
+  BUILD_CACHE: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+  DOCKER_BUILDKIT: 1
+
+vars:
+  APPLICATION_NAME: video-to-screenshots
+  BUILD_TYPE: '{{.BUILD_TYPE | default "dev"}}'
+  REGISTRY: '{{.REGISTRY | default "docker.io"}}'
+
+tasks:
+  build:
+    desc: Build
+    cmds:
+      - docker -l warn build
+        --target {{.BUILD_TYPE}}
+        --tag {{.REGISTRY}}/{{.APPLICATION_NAME}}:latest
+        --file Dockerfile .
+
+  run:
+    desc: Run
+    deps: [build]
+    cmds:
+      - docker run -it --rm
+        -u $(id -u):$(id -g)
+        -v ${PWD}/downloads:/workspace/{{.APPLICATION_NAME}}/downloads
+        -v ${PWD}/screenshots:/workspace/{{.APPLICATION_NAME}}/screenshots
+        {{.REGISTRY}}/{{.APPLICATION_NAME}}:latest
+
+  # TODO: Fails with permision error
+  poetry-lock:
+    desc: Generate poetry.lock
+    deps:
+      - task: build
+        vars: { BUILD_TYPE: dev }
+    cmds:
+      - docker run --rm
+        -u $(id -u):$(id -g)
+        -v ${PWD}:/workspace/{{.APPLICATION_NAME}}
+        {{.REGISTRY}}/{{.APPLICATION_NAME}}
+        bash -c "poetry lock --no-update"
+
+  setup-venv:
+    desc: Setup virtualenv
+    cmds:
+      - rm -rf .venv
+      - POETRY_NO_INTERACTION=1
+        POETRY_VIRTUALENVS_CREATE=1
+        POETRY_VIRTUALENVS_IN_PROJECT=1
+        VENV_PATH=.venv
+        poetry install
+      - echo "source .venv/bin/activate"
+
+  shell:
+    desc: Shell
+    deps:
+      - task: build
+        vars: { BUILD_TYPE: dev }
+    cmds:
+      - docker run -it --rm
+        -u $(id -u):$(id -g)
+        {{.REGISTRY}}/{{.APPLICATION_NAME}}
+        bash
+
+  shell-code:
+    desc: Shell
+    deps:
+      - task: build
+        vars: { BUILD_TYPE: dev }
+    cmds:
+      - docker run -it --rm
+        -u $(id -u):$(id -g)
+        -v ${PWD}:/workspace/{{.APPLICATION_NAME}}
+        {{.REGISTRY}}/{{.APPLICATION_NAME}}
+        bash
+

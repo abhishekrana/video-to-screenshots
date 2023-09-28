@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "video-to-screenshots"
+version = "0.1.0"
+description = "Convert video to screenshots"
+authors = ["Abhishek Rana <abhishekrana502@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+opencv-python = "4.8.0.76"
+pytube = "15.0.0"
+typer = "0.9.0"
+yt-dlp = "2023.9.24"
+
+[tool.poetry.group.dev.dependencies]
+black = "23.9.1"
+mypy = "1.5.1"
+ruff = "0.0.291"
+
+[tool.black]
+line-length = 120
+
+[tool.ruff]
+line-length = 120
